@@ -1,0 +1,36 @@
+name: build-and-push
+
+on:
+  push:
+    branches: 
+      - main
+      - wip
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse branch name
+        shell: sh
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: branch
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: docker buildx build --tag ghcr.io/joshuaks/portainer:${{ steps.branch.outputs.branch }} .
+
+      - name: Conditional - Add 'main' tag if branch is 'main'
+        if: ${{ steps.branch.outputs.branch }} == 'main'
+        run: docker tag ghcr.io/joshuaks/portainer:${{ steps.branch.outputs.branch }} ghcr.io/joshuaks/portainer:main
+
+      - name: Push Image
+        run: docker push --all-tags ghcr.io/joshuaks/portainer
