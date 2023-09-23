@@ -1,0 +1,27 @@
+---
+
+version: "3.7"
+services:
+
+  portainer:
+    image: portainer/portainer-ce:alpine #@TODO point at GHCR
+    read_only: true
+    cap_drop:
+      - ALL
+    networks:
+      - portainer
+    volumes:
+      - portainer-data:/data
+    environment:
+      - DOCKER_HOST=tcp://socket-proxy:2375 # https://github.com/Tecnativa/docker-socket-proxy
+    restart: always
+    expose:
+      - 9443
+    command: --host tcp://socket-proxy:2375 # 
+    # socket-proxy: https://github.com/Tecnativa/docker-socket-proxy
+
+networks:
+  portainer
+
+volumes:
+  portainer-data:
